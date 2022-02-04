@@ -42,9 +42,22 @@ export default class Cart {
 
     getTotal() {
         return this.items.reduce((acc, item) => {
-            return acc.add(
-                Money({ amount: item.quantity * item.product.price }),
-            );
+            const quantity = item.quantity;
+            const price = item.product.price;
+
+            let discount = Money({ amount: 0 });
+            const amount = Money({ amount: quantity * price });
+
+            const condition = item.condition;
+            if (
+                condition &&
+                condition.percentage &&
+                item.quantity > condition.minimum
+            ) {
+                discount = amount.percentage(condition.percentage);
+            }
+
+            return acc.add(amount).subtract(discount);
         }, Money({ amount: 0 }));
     }
 }
