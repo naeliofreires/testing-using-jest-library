@@ -10,7 +10,14 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@babel/core": "^7.17.0",
+    "@babel/preset-env": "^7.16.11",
     "@types/jest": "^27.4.0",
-    "jest": "^27.4.7"
+    "babel-jest": "^27.4.6",
+    "jest": "^27.4.7",
+    "prettier": "^2.5.1"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
   }
 }
