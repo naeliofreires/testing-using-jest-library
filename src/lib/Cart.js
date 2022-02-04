@@ -2,7 +2,25 @@ import find from 'lodash/find';
 import remove from 'lodash/remove';
 import Dinero from 'dinero.js';
 
+const calculatePercentageDiscount = (amount, item) => {
+    const condition = item.condition;
+    if (condition?.percentage && item.quantity > condition?.minimum) {
+        return amount.percentage(condition.percentage);
+    }
+
+    return Money({ amount: 0 });
+};
+
+const calculateQuantityDiscount = (amount, item) => {
+    const condition = item.condition;
+    if (condition?.quantity && item.quantity > condition?.quantity) {
+        return amount.percentage(50);
+    }
+    return Money({ amount: 0 });
+};
+
 const Money = Dinero;
+
 Money.defaultCurrency = 'BRL';
 Money.defaultPrecision = 2;
 
@@ -48,13 +66,12 @@ export default class Cart {
             let discount = Money({ amount: 0 });
             const amount = Money({ amount: quantity * price });
 
-            const condition = item.condition;
-            if (
-                condition &&
-                condition.percentage &&
-                item.quantity > condition.minimum
-            ) {
-                discount = amount.percentage(condition.percentage);
+            if (item.condition?.percentage) {
+                discount = calculatePercentageDiscount(amount, item);
+            }
+
+            if (item.condition?.quantity) {
+                discount = calculateQuantityDiscount(amount, item);
             }
 
             return acc.add(amount).subtract(discount);
