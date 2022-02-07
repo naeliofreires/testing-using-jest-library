@@ -70,9 +70,11 @@ export default class Cart {
 
     summary() {
         const items = this.items;
-        const total = this.getTotal().getAmount();
+        const total = this.getTotal();
 
-        return { items, total };
+        const formatted = total.toFormat('$0,0.00');
+
+        return { items, total: total.getAmount(), formatted };
     }
 
     checkout() {
