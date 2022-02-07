@@ -2,21 +2,46 @@ import find from 'lodash/find';
 import remove from 'lodash/remove';
 import Dinero from 'dinero.js';
 
-const calculatePercentageDiscount = (amount, item) => {
-    const condition = item.condition;
-    if (condition?.percentage && item.quantity > condition?.minimum) {
+const calculatePercentageDiscount = (amount, { condition, quantity }) => {
+    if (condition?.percentage && quantity > condition?.minimum) {
         return amount.percentage(condition.percentage);
     }
 
     return Money({ amount: 0 });
 };
 
-const calculateQuantityDiscount = (amount, item) => {
-    const condition = item.condition;
-    if (condition?.quantity && item.quantity > condition?.quantity) {
-        return amount.percentage(50);
+const calculateQuantityDiscount = (amount, { condition, quantity }) => {
+    const isEven = quantity % 2 === 0;
+
+    if (condition?.quantity && quantity > condition?.quantity) {
+        return amount.percentage(isEven ? 50 : 40);
     }
     return Money({ amount: 0 });
+};
+
+const calculateDiscount = (amount, quantity, condition) => {
+    const list = Array.isArray(condition) ? condition : [condition];
+
+    /**
+     * Higher Discount
+     */
+    const [discount] = list
+        .map(c => {
+            if (c.percentage) {
+                return calculatePercentageDiscount(amount, {
+                    condition: c,
+                    quantity,
+                }).getAmount();
+            } else if (c.quantity) {
+                return calculateQuantityDiscount(amount, {
+                    condition: c,
+                    quantity,
+                }).getAmount();
+            }
+        })
+        .sort((a, b) => b - a);
+
+    return Money({ amount: discount });
 };
 
 const Money = Dinero;
@@ -59,19 +84,14 @@ export default class Cart {
     }
 
     getTotal() {
-        return this.items.reduce((acc, item) => {
-            const quantity = item.quantity;
-            const price = item.product.price;
-
-            let discount = Money({ amount: 0 });
+        return this.items.reduce((acc, { quantity, product, condition }) => {
+            const price = product.price;
             const amount = Money({ amount: quantity * price });
 
-            if (item.condition?.percentage) {
-                discount = calculatePercentageDiscount(amount, item);
-            }
+            let discount = Money({ amount: 0 });
 
-            if (item.condition?.quantity) {
-                discount = calculateQuantityDiscount(amount, item);
+            if (condition) {
+                discount = calculateDiscount(amount, quantity, condition);
             }
 
             return acc.add(amount).subtract(discount);
